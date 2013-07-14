@@ -1,11 +1,11 @@
 import envoy
 import gspread
 import urllib2
-from datetime import datetime
 import re
 import time
 import threading
 import logging
+from datetime import datetime
 
 
 GOOGLE_LOGIN = '...'
@@ -45,16 +45,16 @@ class SpreadsheetHandler:
             except urllib2.HTTPError, e:
                 logging.exception(e)
 
-    def add_measurement(self, temperature, humidity, timestamp=datetime.now()):
+    def add_measurement(self, temperature, humidity):
         values = self.spreadsheet.worksheet(SpreadsheetHandler.SHEET_TITLES[0])
-        values_to_add = [timestamp, temperature, humidity]
+        values_to_add = [datetime.now(), temperature, humidity]
         logging.info('Trying to add a value')
         values.append_row(values_to_add)
         logging.info('Trying to add a value - SUCCESS')
 
-    def add_error(self, error_code, error_desc, timestamp=datetime.now()):
+    def add_error(self, error_code, error_desc,):
         values = self.spreadsheet.worksheet(SpreadsheetHandler.SHEET_TITLES[1])
-        values_to_add = [timestamp, error_code, error_desc]
+        values_to_add = [datetime.now(), error_code, error_desc]
         logging.info('Trying to add an error')
         values.append_row(values_to_add)
 
