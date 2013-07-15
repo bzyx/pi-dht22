@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 	<head>
-		<title>Line Chart</title>
+		<title>A DHT22 CHART</title>
 		<script src="{{ url_for('static', filename='Chart.js') }}"></script>
 		<meta name = "viewport" content = "initial-scale = 1, user-scalable = no">
 		<style>
@@ -14,7 +14,7 @@
 
 
 	<script>
-
+	<!-- THIS IS AN EXAMPLE -->
 		var lineChartData = {
 			labels : ["January","February","March","April","May","June","July"],
 			datasets : [
@@ -35,7 +35,7 @@
 			]
 			
 		}
-
+	<!-- THIS IS AN EXAMPLE -->
 	var myLine = new Chart(document.getElementById("canvas").getContext("2d")).Line(lineChartData);
 	
 	</script>
