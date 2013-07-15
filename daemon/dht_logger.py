@@ -15,18 +15,31 @@ COMMAND_TO_RUN = "sudo ./dht_reader"
 
 
 logging.basicConfig(level=logging.DEBUG, filename='/tmp/dht_logging_app.log')
+"""Internal logger"""
 
 
-class SpreadsheetHandler:
+class SpreadsheetHandler(object):
+    """This class handles connection to spreadsheet and managing it's state.
+    """
     SHEET_TITLES = ('VALUES', 'ERRORS')
     SHEETS_COLUM_TITLES = (('TIMESTAMP', 'TEMP', 'HUM'),
                            ('TIMESTAMP', 'ERROR_CODE', 'ERROR_DESC'))
 
     def __init__(self):
+        """A class that connects to google drive and prepares the spreadsheet.
+        """
         gsconnect = gspread.login(GOOGLE_LOGIN, GOOGLE_PASSWORD)
         self.spreadsheet = gsconnect.open(SPREADSHEET_NAME)
+        self.prepare_speradsheet()
 
     def prepare_speradsheet(self):
+        """This function prepares the structure of spreadsheet.
+            1) Adds new spreadsheets and changes their size
+            2) Tries to delete the original one
+
+            Returns:
+            None
+        """
         if len(set(self.spreadsheet.worksheets()) -
                 set(SpreadsheetHandler.SHEET_TITLES)) == 1:
             logging.info('Creating a new spreadsheet')
@@ -46,31 +59,67 @@ class SpreadsheetHandler:
                 logging.exception(e)
 
     def add_measurement(self, temperature, humidity):
+        """This function adds a measurement to spreadsheet with actual timestamp
+
+            Args:
+               temperature (str):  A temperature value.
+               humidity (str):     A humidity value.
+
+            Returns:
+            None
+        """
         values = self.spreadsheet.worksheet(SpreadsheetHandler.SHEET_TITLES[0])
         values_to_add = [datetime.now(), temperature, humidity]
         logging.info('Trying to add a value')
         values.append_row(values_to_add)
-        logging.info('Trying to add a value - SUCCESS')
 
-    def add_error(self, error_code, error_desc,):
+    def add_error(self, error_code, error_desc):
+        """This function adds a measurement to spreadsheet with actual timestamp
+
+            Args:
+               error_code:          A numerical error code from reader 
+               error_desc (str):    An additional description of error
+
+            Returns:
+            None
+        """
         values = self.spreadsheet.worksheet(SpreadsheetHandler.SHEET_TITLES[1])
         values_to_add = [datetime.now(), error_code, error_desc]
         logging.info('Trying to add an error')
         values.append_row(values_to_add)
 
 
-class DHTReader:
+class DHTReader(object):
+    """This class handles reading data from DHT sensor."""
 
     def __init__(self):
+        """Opens a spreadsheet and reads data from DHT22. Then saves the data to the spreadsheet"""
+
         self.spreadsheet_handler = SpreadsheetHandler()
 
-    def form_result(self, response_dht):
+    def _form_result(self, response_dht):
+        """This function get response text from DHT and pulls the data out
+
+        Args:
+            response_dht(str):   A string from DHT reader app 
+
+        Raises:
+            AssertionError
+
+        Returns:
+            list. A list of 2 values the temperature and humidity
+        """
         results = [elem.replace('= ', '') for elem in re.findall("= [0-9.]+",
                                                                  response_dht)]
         assert len(results) == 2
         return results
 
     def try_read(self):
+        """This function tries to execute the command and read the data
+
+        Returns:
+        None
+        """
         logging.info('Trying to read')
         try:
             response = envoy.run(COMMAND_TO_RUN, timeout=2)
@@ -81,7 +130,7 @@ class DHTReader:
         if response.status_code == 0:
             try:
                 self.spreadsheet_handler.add_measurement(
-                                        *self.form_result(response.std_out))
+                                        *self._form_result(response.std_out))
             except AssertionError, e:
                 logging.exception(e)
                 self.spreadsheet_handler.add_error(response.status_code,
@@ -92,6 +141,9 @@ class DHTReader:
                                                response.std_err)
 
     def run(self):
+        """This function runs the script in endless loop and reads data
+        in interval of 15 sec.
+        """
         i = 1
         while True:
             logging_TXT = "Measure # %d"
@@ -101,7 +153,5 @@ class DHTReader:
 
 if __name__ == '__main__':
     logging.info('DHT_LOGGER_APP STARTS NOW!')
-    s = SpreadsheetHandler()
-    s.prepare_speradsheet()
-    d = DHTReader()
+    #d = DHTReader()
     threading.Thread(target=d.run).start()
