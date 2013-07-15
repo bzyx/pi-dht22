@@ -72,7 +72,11 @@ class DHTReader:
 
     def try_read(self):
         logging.info('Trying to read')
-        response = envoy.run(COMMAND_TO_RUN, timeout=2)
+        try:
+            response = envoy.run(COMMAND_TO_RUN, timeout=2)
+        except OSError, e:
+            #From time to time "OSError: [Errno 1] Operation not permitted"
+            logging.exception(e)
 
         if response.status_code == 0:
             try:
@@ -82,6 +86,7 @@ class DHTReader:
                 logging.exception(e)
                 self.spreadsheet_handler.add_error(response.status_code,
                                                    response.std_out)
+
         else:
             self.spreadsheet_handler.add_error(response.status_code,
                                                response.std_err)
