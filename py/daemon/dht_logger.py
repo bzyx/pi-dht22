@@ -8,8 +8,8 @@ import logging
 from datetime import datetime
 
 
-GOOGLE_LOGIN = '...'
-GOOGLE_PASSWORD = '...'
+GOOGLE_LOGIN = ''
+GOOGLE_PASSWORD = ''
 SPREADSHEET_NAME = 'DHT22'
 COMMAND_TO_RUN = "sudo ./dht_reader"
 
@@ -59,7 +59,8 @@ class SpreadsheetHandler(object):
                 logging.exception(e)
 
     def add_measurement(self, temperature, humidity):
-        """This function adds a measurement to spreadsheet with actual timestamp
+        """This function adds a measurement to spreadsheet with
+            actual timestamp
 
             Args:
                temperature (str):  A temperature value.
@@ -74,10 +75,11 @@ class SpreadsheetHandler(object):
         values.append_row(values_to_add)
 
     def add_error(self, error_code, error_desc):
-        """This function adds a measurement to spreadsheet with actual timestamp
+        """This function adds a measurement to spreadsheet with
+            actual timestamp
 
             Args:
-               error_code:          A numerical error code from reader 
+               error_code:          A numerical error code from reader
                error_desc (str):    An additional description of error
 
             Returns:
@@ -88,12 +90,38 @@ class SpreadsheetHandler(object):
         logging.info('Trying to add an error')
         values.append_row(values_to_add)
 
+    def get_last_num_values(self, number_of_values=40):
+        """This function returns a part of last values from spreadsheet
+
+            Args:
+               number_of_values (int):    How many values (default 40 ~ 10min)
+
+            Returns:
+            tuple. Tuple of lists with the values
+
+            Notes:
+                This works very very slow :(
+        """
+        values = self.spreadsheet.worksheet(SpreadsheetHandler.SHEET_TITLES[0])
+        timestamps = []
+        temps = []
+        humids = []
+
+        starting_row = values.row_count - number_of_values
+        for row in xrange(starting_row, values.row_count):
+            row_value = values.row_values(row)      # TODO: Why this is so slow
+            timestamps.append(row_value[0])
+            temps.append(row_value[1])
+            humids.append(row_value[2])
+        return (timestamps, temps, humids)
+
 
 class DHTReader(object):
     """This class handles reading data from DHT sensor."""
 
     def __init__(self):
-        """Opens a spreadsheet and reads data from DHT22. Then saves the data to the spreadsheet"""
+        """Opens a spreadsheet and reads data from DHT22.
+        Then saves the data to the spreadsheet"""
 
         self.spreadsheet_handler = SpreadsheetHandler()
 
@@ -101,7 +129,7 @@ class DHTReader(object):
         """This function get response text from DHT and pulls the data out
 
         Args:
-            response_dht(str):   A string from DHT reader app 
+            response_dht(str):   A string from DHT reader app
 
         Raises:
             AssertionError
@@ -124,7 +152,7 @@ class DHTReader(object):
         try:
             response = envoy.run(COMMAND_TO_RUN, timeout=2)
         except OSError, e:
-            #From time to time "OSError: [Errno 1] Operation not permitted"
+            # From time to time "OSError: [Errno 1] Operation not permitted"
             logging.exception(e)
 
         if response.status_code == 0:
@@ -153,5 +181,5 @@ class DHTReader(object):
 
 if __name__ == '__main__':
     logging.info('DHT_LOGGER_APP STARTS NOW!')
-    #d = DHTReader()
+    d = DHTReader()
     threading.Thread(target=d.run).start()
