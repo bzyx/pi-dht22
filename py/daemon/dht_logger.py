@@ -18,6 +18,10 @@ logging.basicConfig(level=logging.DEBUG, filename='/tmp/dht_logging_app.log')
 """Internal logger"""
 
 
+logging.basicConfig(level=logging.DEBUG, filename='/tmp/dht_logging_app.log')
+"""Internal logger"""
+
+
 class SpreadsheetHandler(object):
     """This class handles connection to spreadsheet and managing it's state.
     """
@@ -149,24 +153,25 @@ class DHTReader(object):
         None
         """
         logging.info('Trying to read')
+        response = None
         try:
             response = envoy.run(COMMAND_TO_RUN, timeout=2)
-        except OSError, e:
-            # From time to time "OSError: [Errno 1] Operation not permitted"
-            logging.exception(e)
 
-        if response.status_code == 0:
-            try:
-                self.spreadsheet_handler.add_measurement(
+            if response.status_code == 0:
+                try:
+                    self.spreadsheet_handler.add_measurement(
                                         *self._form_result(response.std_out))
-            except AssertionError, e:
-                logging.exception(e)
-                self.spreadsheet_handler.add_error(response.status_code,
+                except AssertionError, e:
+                    logging.exception(e)
+                    self.spreadsheet_handler.add_error(response.status_code,
                                                    response.std_out)
 
-        else:
-            self.spreadsheet_handler.add_error(response.status_code,
+            else:
+                self.spreadsheet_handler.add_error(response.status_code,
                                                response.std_err)
+        except OSError, e:
+        # From time to time "OSError: [Errno 1] Operation not permitted"
+            logging.exception(e)
 
     def run(self):
         """This function runs the script in endless loop and reads data
