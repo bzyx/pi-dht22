@@ -18,10 +18,6 @@ logging.basicConfig(level=logging.DEBUG, filename='/tmp/dht_logging_app.log')
 """Internal logger"""
 
 
-logging.basicConfig(level=logging.DEBUG, filename='/tmp/dht_logging_app.log')
-"""Internal logger"""
-
-
 class SpreadsheetHandler(object):
     """This class handles connection to spreadsheet and managing it's state.
     """
@@ -181,7 +177,11 @@ class DHTReader(object):
         while True:
             logging_TXT = "Measure # %d"
             logging.info(logging_TXT % i)
-            self.try_read()
+            try:
+                self.try_read()
+            except HTTPError, e:
+                # HTTPError: HTTP Error 500: Internal Server Error when google have problems
+                logging.exception(e)
             time.sleep(15)
 
 if __name__ == '__main__':
