@@ -268,6 +268,8 @@ class DHTReader(object):
             else:
                 self.spreadsheet_handler.add_error(response.status_code,
                                                response.std_err)
+                self.database_handler.add_error(response.status_code,
+                                               response.std_err)
         except OSError, e:
         # From time to time "OSError: [Errno 1] Operation not permitted"
             logging.exception(e)
