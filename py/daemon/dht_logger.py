@@ -264,6 +264,8 @@ class DHTReader(object):
                     logging.exception(e)
                     self.spreadsheet_handler.add_error(response.status_code,
                                                    response.std_out)
+                    self.database_handler.add_error(response.status_code,
+                                               response.std_err)
 
             else:
                 self.spreadsheet_handler.add_error(response.status_code,
@@ -282,12 +284,13 @@ class DHTReader(object):
         while True:
             logging_TXT = "Measure # %d"
             logging.info(logging_TXT % i)
+            i+=1
             try:
                 self.try_read()
             except HTTPError, e:
                 # HTTPError: HTTP Error 500: Internal Server Error when google have problems
                 logging.exception(e)
-            time.sleep(15)
+            time.sleep(60)
 
 if __name__ == '__main__':
     logging.info('DHT_LOGGER_APP STARTS NOW!')
