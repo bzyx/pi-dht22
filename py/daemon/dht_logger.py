@@ -29,30 +29,26 @@ class DatabaseHandler(object):
     CREATE TABLE "measurement" ( "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "timestamp" TEXT NOT NULL, "year" TEXT, "month" TEXT, "day" TEXT, "hour" TEXT, "temp" REAL, "humid" REAL );
     CREATE TABLE "settings" ( "key" TEXT NOT NULL, "value" TEXT );
     """
-    
+
     DB_INIT_COMMAND = """
     INSERT INTO settings VALUES( "last_measurement_id", 0);
     """
     DB_TEST_COMMAND = """
     SELECT value FROM settings WHERE key = "last_measurement_id";
     """
-    
+
     INSERT_MEASUREMENT = "INSERT INTO measurement ('timestamp', 'year', 'month', 'day', 'hour', 'temp', 'humid') VALUES (?, ?, ?, ?, ?, ?, ?);"
     INSERT_ERROR = "INSERT INTO error ('timestamp', 'description') VALUES (?, ?);"
 
-
     def __init__(self):
-        """A class that connects to google drive and prepares the spreadsheet.
+        """A class that connects to sqlite database,
+           prepares it and logs measurements.
         """
         self.connnection = sqlite3.connect(DB_LOCATION)
         self.prepare_database()
-        
-
 
     def prepare_database(self):
-        """This function prepares the structure of spreadsheet.
-            1) Adds new spreadsheets and changes their size
-            2) Tries to delete the original one
+        """This function prepares database, creates tables, adds initial values
 
             Returns:
             None
@@ -61,11 +57,11 @@ class DatabaseHandler(object):
         try:
             cursor = self.connnection.cursor()
             cursor.execute(DatabaseHandler.DB_TEST_COMMAND)
-            data=cursor.fetchone()
+            data = cursor.fetchone()
         except sqlite3.OperationalError, e:
             logging.error('Db error')
             logging.exception(e)
-            
+
         if data is None:
             logging.info('Creating a new database')
             cursor.executescript(DatabaseHandler.DB_CREATE_COMMAND)
@@ -73,7 +69,6 @@ class DatabaseHandler(object):
             cursor = self.connnection.cursor()
             cursor.execute(DatabaseHandler.DB_INIT_COMMAND)
             self.connnection.commit()
-
 
     def add_measurement(self, temperature, humidity):
         """This function adds a measurement to database with
@@ -89,14 +84,19 @@ class DatabaseHandler(object):
         with self.connnection:
             cursor = self.connnection.cursor()
             dt_now = datetime.now()
-            cursor.execute(DatabaseHandler.INSERT_MEASUREMENT, (dt_now, dt_now.year,
-                                                            dt_now.month, dt_now.day, dt_now.hour,
-                                                            temperature, humidity))
+            cursor.execute(DatabaseHandler.INSERT_MEASUREMENT, (dt_now,
+                                                                dt_now.year,
+                                                                dt_now.month,
+                                                                dt_now.day,
+                                                                dt_now.hour,
+                                                                temperature,
+                                                                humidity))
             logging.info('Trying to add a value to DB')
             lastrowid = cursor.lastrowid
-            logging.info('GOT ROW_ID '+ str(lastrowid))
-            cursor.execute("UPDATE settings SET value=? WHERE key='last_measurement_id'", (lastrowid, ))
-            
+            logging.info('GOT ROW_ID ' + str(lastrowid))
+            cursor.execute("UPDATE settings SET value=?"
+                           "WHERE key='last_measurement_id'", (lastrowid, ))
+
             self.connnection.commit()
 
     def add_error(self, error_code, error_desc):
@@ -111,11 +111,12 @@ class DatabaseHandler(object):
         """
         with self.connnection:
             cursor = self.connnection.cursor()
-            dt_now = datetime.now()
-            cursor.execute(DatabaseHandler.INSERT_ERROR, ( datetime.now(),error_desc))
+            cursor.execute(DatabaseHandler.INSERT_ERROR, (datetime.now(),
+                                                          error_desc))
             logging.info('Trying to add an error to DB')
-                        
+
             self.connnection.commit()
+
 
 class SpreadsheetHandler(object):
     """This class handles connection to spreadsheet and managing it's state.
