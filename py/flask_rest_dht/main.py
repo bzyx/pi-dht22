@@ -8,7 +8,8 @@ import sqlite3
 from flask import Flask, g
 from flask.ext import restful
 
-DATABASE = ''
+#DATABASE = '/home/bzyx/flask_pi/database.db'
+DATABASE = '/home/pi/flask_pi/repo/logger/database.db'
 
 DB_GET_MEASUREMENT_COMMAND = """
     SELECT timestamp, temp, humid, id FROM measurement WHERE id in
@@ -35,7 +36,8 @@ def close_connection(exception):
 
 class IndexAPI(restful.Resource):
     def get(self):
-        return {'index': 'EMPTY',
+        return {'status': 200,
+                'index': 'EMPTY',
                 }
 
 
@@ -59,7 +61,7 @@ class DHT(restful.Resource):
                 'id': data[3],
                 }
 
-#api.add_resource(IndexAPI, '/')
+api.add_resource(IndexAPI, '/')
 api.add_resource(DHT, '/api/dht/last')
 
 if __name__ == '__main__':
